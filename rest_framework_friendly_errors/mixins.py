@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+import copy
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.exceptions import ValidationError as RestValidationError
@@ -108,7 +109,7 @@ class FriendlyErrorMessagesMixin(FieldMap):
 
     def does_not_exist_many_to_many_handler(self, field, message, kwargs):
         unformatted = field.error_messages['does_not_exist']
-        new_kwargs = kwargs
+        new_kwargs = copy.deepcopy(kwargs)
         for value in kwargs['value']:
             new_kwargs['value'] = value
             if unformatted.format(**new_kwargs) == message:
