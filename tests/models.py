@@ -2,7 +2,6 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.template.defaultfilters import title
 
-
 LANGUAGE_CHOICES = (
     ('python', 'Python'),
     ('c++', 'C++'),
@@ -27,3 +26,12 @@ class Snippet(models.Model):
     rating = models.DecimalField(max_digits=3, decimal_places=1)
     posted_date = models.DateTimeField()
     watermark = models.CharField(max_length=100, unique=True)
+
+
+class Field(models.Model):
+    label = models.CharField(max_length=10)
+
+
+class FieldOption(models.Model):
+    field = models.ForeignKey(Field, on_delete=models.CASCADE)
+    value = models.IntegerField(unique=True)

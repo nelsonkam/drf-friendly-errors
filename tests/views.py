@@ -1,10 +1,12 @@
-from rest_framework.mixins import (ListModelMixin, CreateModelMixin,
-                                   RetrieveModelMixin, UpdateModelMixin)
 from rest_framework.generics import GenericAPIView
+from rest_framework.mixins import (
+    CreateModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin
+)
 
 from tests.models import Snippet
-from tests.serializers import (SnippetModelSerializer,
-                               AnotherSnippetModelSerializer)
+from tests.serializers import (
+    AnotherSnippetModelSerializer, SnippetModelSerializer
+)
 
 
 class SnippetList(ListModelMixin,

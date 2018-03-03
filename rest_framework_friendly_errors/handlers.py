@@ -1,5 +1,5 @@
-from rest_framework.views import exception_handler
 from rest_framework.exceptions import APIException
+from rest_framework.views import exception_handler
 
 from rest_framework_friendly_errors import settings
 from rest_framework_friendly_errors.utils import is_pretty

@@ -10,7 +10,8 @@ class UpdateFieldSettingTestCase(TestCase):
             'CharField': {'required': 2001, 'null': 2003, 'blank': 2004,
                           'max_length': 2005, 'min_length': 2006},
             'EmailField': {'required': 2001, 'invalid': 2002, 'null': 2003,
-                           'blank': 2004, 'max_length': 2005, 'min_length': 2006},
+                           'blank': 2004, 'max_length': 2005,
+                           'min_length': 2006},
         }
 
     def test_update_settings_with_empty_dict(self):

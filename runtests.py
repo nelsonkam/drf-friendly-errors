@@ -4,21 +4,19 @@ based on https://github.com/tomchristie/django-rest-framework/blob/master/runtes
 """
 from __future__ import print_function
 
-import pytest
-import sys
-import os
 import subprocess
+import sys
 
+import pytest
 
 PYTEST_ARGS = {
-    'default': ['tests'],
-    'fast': ['tests', '-q'],
+    'default': ['tests', '--tb=short', '-s', '-rw'],
+    'fast': ['tests', '--tb=short', '-q', '-s', '-rw'],
 }
 
-FLAKE8_ARGS = ['rest_framework_friendly_errors', 'tests', '--ignore=E501']
+FLAKE8_ARGS = ['rest_framework', 'tests']
 
-
-sys.path.append(os.path.dirname(__file__))
+ISORT_ARGS = ['--recursive', '--check-only', '--diff', '-o' 'uritemplate', '-p', 'tests', 'rest_framework', 'tests']
 
 
 def exit_on_failure(ret, message=None):
@@ -33,6 +31,18 @@ def flake8_main(args):
     return ret
 
 
+def isort_main(args):
+    print('Running isort code checking')
+    ret = subprocess.call(['isort'] + args)
+
+    if ret:
+        print('isort failed: Some modules have incorrectly ordered imports. Fix by running `isort --recursive .`')
+    else:
+        print('isort passed')
+
+    return ret
+
+
 def split_class_and_function(string):
     class_string, function_string = string.split('.', 1)
     return "%s and %s" % (class_string, function_string)
@@ -40,7 +50,7 @@ def split_class_and_function(string):
 
 def is_function(string):
     # `True` if it looks like a test function is included in the string.
-   return string.startswith('test_') or '.test_' in string
+    return string.startswith('test_') or '.test_' in string
 
 
 def is_class(string):
@@ -53,8 +63,10 @@ if __name__ == "__main__":
         sys.argv.remove('--nolint')
     except ValueError:
         run_flake8 = True
+        run_isort = True
     else:
         run_flake8 = False
+        run_isort = False
 
     try:
         sys.argv.remove('--lintonly')
@@ -70,10 +82,23 @@ if __name__ == "__main__":
     else:
         style = 'fast'
         run_flake8 = False
+        run_isort = False
 
     if len(sys.argv) > 1:
         pytest_args = sys.argv[1:]
         first_arg = pytest_args[0]
+
+        try:
+            pytest_args.remove('--coverage')
+        except ValueError:
+            pass
+        else:
+            pytest_args = [
+                '--cov-report',
+                'xml',
+                '--cov',
+                'rest_framework'] + pytest_args
+
         if first_arg.startswith('-'):
             # `runtests.py [flags]`
             pytest_args = ['tests'] + pytest_args
@@ -90,5 +115,9 @@ if __name__ == "__main__":
 
     if run_tests:
         exit_on_failure(pytest.main(pytest_args))
+
     if run_flake8:
         exit_on_failure(flake8_main(FLAKE8_ARGS))
+
+    if run_isort:
+        exit_on_failure(isort_main(ISORT_ARGS))
