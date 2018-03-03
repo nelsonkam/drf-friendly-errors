@@ -67,7 +67,6 @@ class FriendlyErrorMessagesMixin(FieldMap):
     def register_error(self, error_message, field_name=None,
                        error_key=None, error_code=None, meta=None,
                        raise_validation_error=True):
-        key = field_name
         if field_name is None:
             if error_code is None:
                 raise ValueError('For non field error you must provide '
@@ -75,6 +74,7 @@ class FriendlyErrorMessagesMixin(FieldMap):
             error = {'code': error_code, 'message': error_message}
             key = '%s_%s' % (error_message, error_code)
         else:
+            key = field_name
             field_instance = self.fields.get(field_name)
             if field_instance is None:
                 raise ValueError('Incorrect field name: %s' % field_name)
@@ -101,7 +101,7 @@ class FriendlyErrorMessagesMixin(FieldMap):
             error['meta'] = meta
 
         if field_name is not None:
-            self.registered_errors[key] = [error]
+            self.registered_errors[field_name] = [error]
         else:
             non_field_errors_key = api_settings.NON_FIELD_ERRORS_KEY
             if not self.registered_errors.get(non_field_errors_key):
@@ -109,7 +109,7 @@ class FriendlyErrorMessagesMixin(FieldMap):
             self.registered_errors[non_field_errors_key].append({key: [error]})
 
         if raise_validation_error:
-            raise RestValidationError({key: [error]})
+            raise RestValidationError(self.registered_errors)
 
     def get_field_kwargs(self, field, field_data):
         field_type = field.__class__.__name__
