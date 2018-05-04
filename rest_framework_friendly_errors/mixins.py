@@ -4,7 +4,7 @@ from django.conf import settings as dj_settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 from django.utils.encoding import force_text
-from rest_framework.exceptions import ValidationError as RestValidationError
+from rest_framework.exceptions import ValidationError as RestValidationError, ErrorDetail
 from rest_framework.settings import api_settings
 from rest_framework.utils.serializer_helpers import ReturnDict
 
@@ -259,8 +259,11 @@ class SerializerErrorMessagesMixin(FieldMap):
         return error_entries
 
     def get_non_field_error_entry(self, error):
+        original_error = error
         if isinstance(error, dict):
             error = list(error.keys())[0]
+        elif isinstance(error, ErrorDetail):
+            error = str(error)
 
         registered_errors = self.registered_errors.get(
             api_settings.NON_FIELD_ERRORS_KEY, {})
@@ -273,7 +276,7 @@ class SerializerErrorMessagesMixin(FieldMap):
                     'message': error}
         code = self.NON_FIELD_ERRORS.get(
             error, settings.FRIENDLY_NON_FIELD_ERRORS.get(
-                error, getattr(error, 'code', None)))
+                error, getattr(original_error, 'code', None)))
         return {'code': code, 'message': error}
 
     def get_non_field_error_entries(self, errors):
