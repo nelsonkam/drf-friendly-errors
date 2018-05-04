@@ -3,10 +3,8 @@ from rest_framework.mixins import (
     CreateModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin
 )
 
-from tests.models import Snippet
-from tests.serializers import (
-    AnotherSnippetModelSerializer, SnippetModelSerializer
-)
+from .models import Snippet
+from .serializers import AnotherSnippetModelSerializer, SnippetModelSerializer
 
 
 class SnippetList(ListModelMixin,

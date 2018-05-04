@@ -45,7 +45,7 @@ Requirements
 ------------
 -  Python (2.7, 3.5, 3.6)
 -  Django (1.10+, 1.11+)
--  Django REST framework (>=3.3)
+-  Django REST framework (>=3.5)
 
 Installation
 ------------
@@ -65,20 +65,20 @@ Or using pip
 Usage
 -----
 
-Simply add a FriendlyErrorMessagesMixin to your serializer or model serializer class
+Simply add a SerializerErrorMessagesMixin to your serializer or model serializer class
 
 .. code:: python
 
-    from rest_framework_friendly_errors.mixins import FriendlyErrorMessagesMixin
+    from rest_framework_friendly_errors.mixins import SerializerErrorMessagesMixin
 
-    class MySerializer(FriendlyErrorMessagesMixin, ModelSerializer):
+    class MySerializer(SerializerErrorMessagesMixin, ModelSerializer):
 
 If you want to change default library settings and provide your own set of error codes just add following in your
 settings.py
 
 .. code:: python
 
-    FRIENDLY_ERRORS = {
+    DRF_ERRORS = {
         FIELD_ERRORS = {
             'CharField': {'required': 'my_custom_error_code', 'null': 'my_custom_error_code'}
         }
@@ -97,7 +97,7 @@ If you need custom field validation or validation for whole serializer register 
 
 .. code:: python
 
-    class PostSerializer(FriendlyErrorMessagesMixin,
+    class PostSerializer(SerializerErrorMessagesMixin,
                          serializers.ModelSerializer):
         class Meta:
             model = Post
@@ -121,7 +121,7 @@ If you want to raise field error in validate method use register_error method pr
 
 .. code:: python
 
-    class PostSerializer(FriendlyErrorMessagesMixin,
+    class PostSerializer(SerializerErrorMessagesMixin,
                          serializers.ModelSerializer):
         class Meta:
             model = Post
@@ -145,7 +145,7 @@ add this exception handler to your REST_FRAMEWORK settings
 
     REST_FRAMEWORK = {
         'EXCEPTION_HANDLER':
-        'rest_framework_friendly_errors.handlers.friendly_exception_handler'
+        'rest_framework_friendly_errors.handlers.drf_exception_handler'
     }
 
 Tests

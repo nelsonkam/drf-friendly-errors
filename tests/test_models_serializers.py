@@ -3,13 +3,14 @@ from rest_framework.settings import api_settings
 from rest_framework_friendly_errors.settings import (
     FRIENDLY_ERROR_CODES, FRIENDLY_FIELD_ERRORS, FRIENDLY_NON_FIELD_ERRORS
 )
-from tests import BaseTestCase
-from tests.serializers import (
+
+from . import BaseTestCase
+from .serializers import (
     AnotherSnippetModelSerializer, FieldModelSerializer,
     FieldOptionModelSerializer, SnippetModelSerializer,
     ThirdSnippetModelSerializer
 )
-from tests.utils import run_is_valid
+from .utils import run_is_valid
 
 
 class SnippetModelSerializerTestCase(BaseTestCase):
@@ -207,3 +208,4 @@ class FieldAndFieldOptionModelSerializerTestCase(BaseTestCase):
         self.assertIsNotNone(s.errors['errors'].get('options'))
         self.assertEqual(type(s.errors['errors']['options']), list)
         self.assertEqual(s.errors['errors']['options'][0]['code'], code)
+        self.assertEqual(s.errors['errors']['options'][0]['field'], 'value')

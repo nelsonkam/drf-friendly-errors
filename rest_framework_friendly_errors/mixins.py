@@ -8,41 +8,14 @@ from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.settings import api_settings
 from rest_framework.utils.serializer_helpers import ReturnDict
 
-from rest_framework_friendly_errors import settings
-from rest_framework_friendly_errors.field_map import FieldMap
+from . import settings
+from .field_map import FieldMap
 
 
-class FriendlyErrorMessagesMixin(FieldMap):
+class SerializerErrorMessagesMixin(FieldMap):
     """
     A serializer mixin which formats the `serializer.ValidationError` message
     according to friendly format.
-
-    It turns default JSON body of HTTP 400 response, which look like this
-
-    {
-        "name": ["This field is required."],
-        "password": ["This field may not be blank."]
-    }
-
-    Into this:
-
-    {
-        "errors": {
-            "name": [
-                {
-                    "message": "This field is required."
-                    "code": "required"
-                }
-            ],
-            "password": [
-                {
-                    "message": "This field may not be blank."
-                    "code": "blank"
-                }
-            ]
-        }
-    }
-
     """
 
     FIELD_VALIDATION_ERRORS = {}
@@ -50,11 +23,11 @@ class FriendlyErrorMessagesMixin(FieldMap):
 
     def __init__(self, *args, **kwargs):
         self.registered_errors = {}
-        super(FriendlyErrorMessagesMixin, self).__init__(*args, **kwargs)
+        super(SerializerErrorMessagesMixin, self).__init__(*args, **kwargs)
 
     @property
     def errors(self):
-        ugly_errors = super(FriendlyErrorMessagesMixin, self).errors
+        ugly_errors = super(SerializerErrorMessagesMixin, self).errors
         pretty_errors = self.build_pretty_errors(ugly_errors)
         return ReturnDict(pretty_errors, serializer=self)
 
@@ -206,13 +179,14 @@ class FriendlyErrorMessagesMixin(FieldMap):
             if self._run_validator(validator, field, message, parent=parent):
                 return validator
 
-    def get_validator_error_code(self, validator):
+    def get_validator_error_code(self, validator, error):
         try:
             name = validator.__name__
         except AttributeError:
             name = validator.__class__.__name__
         return self.FIELD_VALIDATION_ERRORS.get(name) \
-            or settings.FRIENDLY_VALIDATOR_ERRORS.get(name)
+            or settings.FRIENDLY_VALIDATOR_ERRORS.get(name) \
+            or getattr(error, 'code', None)
 
     def is_default_error(self, error):
         return settings.INVALID_DATA_MESSAGE.format(
@@ -238,8 +212,8 @@ class FriendlyErrorMessagesMixin(FieldMap):
             # Here we know that error was raised by a custom field validator
             validator = self.find_validator(field, error)
             if validator:
-                return {'code': self.get_validator_error_code(validator),
-                        'message': error}
+                code = self.get_validator_error_code(validator, error)
+                return {'code': code, 'message': error}
 
             # Here we know that error was raised by a custom field validator
             # but field might be using another serializer
@@ -251,27 +225,23 @@ class FriendlyErrorMessagesMixin(FieldMap):
                     validator = self.find_validator(
                         child_field, error, parent=field)
                     if validator:
-                        return {
-                            'code': self.get_validator_error_code(validator),
-                            'message': error
-                        }
+                        code = self.get_validator_error_code(validator, error)
+                        return {'code': code, 'message': error}
 
             # Here we know that error was raised by custom validate method
             # in serializer
             validator = getattr(self, "validate_%s" % field.field_name, None)
             if validator and self._run_validator(validator, field, error):
-                return {
-                    'code': self.get_validator_error_code(validator),
-                    'message': error
-                }
+                code = self.get_validator_error_code(validator, error)
+                return {'code': code, 'message': error}
             else:
                 # maybe field error was raised directly from `validate` method
-                return {
-                    'code': self.FIELD_VALIDATION_ERRORS.get(field.field_name),
-                    'message': error
-                }
+                code = self.FIELD_VALIDATION_ERRORS.get(
+                    field.field_name, getattr(error, 'code', None))
+                return {'code': code, 'message': error}
 
-        code = settings.FRIENDLY_FIELD_ERRORS.get(field_type, {}).get(key)
+        code = settings.FRIENDLY_FIELD_ERRORS.get(field_type, {}).get(
+            key, getattr(error, 'code', None))
         return {
             'code': code,
             'message': error
@@ -280,7 +250,13 @@ class FriendlyErrorMessagesMixin(FieldMap):
     def get_field_error_entries(self, errors, field):
         if isinstance(errors, dict):
             errors = errors.get(field.field_name, [errors])
-        return [self.get_field_error_entry(error, field) for error in errors]
+        error_entries = []
+        for error in errors:
+            error_entry = self.get_field_error_entry(error, field)
+            if isinstance(error, dict):
+                error_entry['field'] = list(error.items())[0][0]
+            error_entries.append(error_entry)
+        return error_entries
 
     def get_non_field_error_entry(self, error):
         if isinstance(error, dict):
@@ -296,7 +272,8 @@ class FriendlyErrorMessagesMixin(FieldMap):
             return {'code': settings.FRIENDLY_NON_FIELD_ERRORS['invalid'],
                     'message': error}
         code = self.NON_FIELD_ERRORS.get(
-            error, settings.FRIENDLY_NON_FIELD_ERRORS.get(error))
+            error, settings.FRIENDLY_NON_FIELD_ERRORS.get(
+                error, getattr(error, 'code', None)))
         return {'code': code, 'message': error}
 
     def get_non_field_error_entries(self, errors):

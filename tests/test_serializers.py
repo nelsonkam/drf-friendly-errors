@@ -2,21 +2,23 @@ from rest_framework import serializers
 from rest_framework.settings import api_settings
 
 from rest_framework_friendly_errors.mixins import (
-    FriendlyErrorMessagesMixin, RestValidationError
+    RestValidationError, SerializerErrorMessagesMixin
 )
 from rest_framework_friendly_errors.settings import (
     FRIENDLY_FIELD_ERRORS, FRIENDLY_NON_FIELD_ERRORS
 )
-from tests import BaseTestCase
-from tests.serializers import (
+
+from . import BaseTestCase
+from .serializers import (
     FieldsErrorAsDictInValidateSerializer, NonFieldErrorAsStringSerializer,
-    RegisterMixErrorSerializer, RegisterMultipleFieldsErrorSerializer,
-    RegisterSingleFieldErrorSerializer, SnippetSerializer, SnippetValidator
+    NonFieldErrorAsStringWithCodeSerializer, RegisterMixErrorSerializer,
+    RegisterMultipleFieldsErrorSerializer, RegisterSingleFieldErrorSerializer,
+    SnippetSerializer, SnippetValidator
 )
-from tests.utils import run_is_valid
+from .utils import run_is_valid
 
 
-class SimpleSerializerClass(FriendlyErrorMessagesMixin,
+class SimpleSerializerClass(SerializerErrorMessagesMixin,
                             serializers.Serializer):
     text_field = serializers.CharField(max_length=255)
     integer_field = serializers.IntegerField()
@@ -242,6 +244,17 @@ class SerializerErrorsTestCase(BaseTestCase):
         code = FRIENDLY_NON_FIELD_ERRORS['invalid']
         self.assertEqual(errors[0]['code'], code)
 
+    def test_non_field_error_as_string_with_custom_error_code(self):
+        self.data_set['title'] = 'A Python'
+        self.data_set['language'] = 'c++'
+        s = run_is_valid(NonFieldErrorAsStringWithCodeSerializer,
+                         data=self.data_set)
+        errors = s.errors['errors'].get(api_settings.NON_FIELD_ERRORS_KEY)
+        self.assertIsNotNone(errors)
+        self.assertEqual(type(errors), list)
+        self.assertEqual(errors[0]['message'], 'Test')
+        self.assertEqual(errors[0]['code'], 'custom_code')
+
     def test_non_field_error_as_dict(self):
         self.data_set['title'] = 'A Python'
         self.data_set['language'] = 'c++'
@@ -256,12 +269,12 @@ class SerializerErrorsTestCase(BaseTestCase):
 
         self.assertIsNotNone(errors.get('linenos'))
         self.assertEqual(type(errors['linenos']), list)
-        self.assertIsNone(errors['linenos'][0]['code'])
+        self.assertEqual(errors['linenos'][0]['code'], 'invalid')
         self.assertEqual(errors['linenos'][0]['message'], 'not good')
 
         self.assertIsNotNone(errors.get('language'))
         self.assertEqual(type(errors['language']), list)
-        self.assertIsNone(errors['language'][0]['code'])
+        self.assertEqual(errors['language'][0]['code'], 'invalid')
         self.assertEqual(errors['language'][0]['message'], 'not good')
 
     def test_failed_relation_lookup(self):

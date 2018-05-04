@@ -3,9 +3,9 @@ from __future__ import unicode_literals
 from django.conf import settings
 from rest_framework import exceptions as drf
 
-from rest_framework_friendly_errors.utils import update_field_settings
+from .utils import update_field_settings
 
-USER_SETTINGS = getattr(settings, 'FRIENDLY_ERRORS', {})
+USER_SETTINGS = getattr(settings, 'DRF_ERRORS', {})
 
 USER_FRIENDLY_FIELD_ERRORS = USER_SETTINGS.get('FIELD_ERRORS', {})
 USER_NON_FIELD_ERRORS = USER_SETTINGS.get('NON_FIELD_ERRORS', {})

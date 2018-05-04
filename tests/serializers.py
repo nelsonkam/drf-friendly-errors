@@ -2,9 +2,10 @@ from django.template.defaultfilters import title
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError
 
-from rest_framework_friendly_errors.mixins import FriendlyErrorMessagesMixin
+from rest_framework_friendly_errors.mixins import SerializerErrorMessagesMixin
 from rest_framework_friendly_errors.settings import FRIENDLY_NON_FIELD_ERRORS
-from tests.models import LANGUAGE_CHOICES, Field, FieldOption, Snippet
+
+from .models import LANGUAGE_CHOICES, Field, FieldOption, Snippet
 
 
 def is_proper_title(value):
@@ -12,7 +13,7 @@ def is_proper_title(value):
         raise ValidationError('Incorrect title')
 
 
-class SnippetSerializer(FriendlyErrorMessagesMixin, serializers.Serializer):
+class SnippetSerializer(SerializerErrorMessagesMixin, serializers.Serializer):
     pk = serializers.IntegerField(read_only=True)
     title = serializers.CharField(max_length=10, validators=[is_proper_title])
     comment = serializers.CharField(max_length=255)
@@ -116,6 +117,15 @@ class NonFieldErrorAsStringSerializer(SnippetSerializer):
     }
 
 
+class NonFieldErrorAsStringWithCodeSerializer(SnippetSerializer):
+    """
+    Serializer which raises non field error as string with custom error code
+    """
+
+    def validate(self, attrs):
+        raise ValidationError('Test', code='custom_code')
+
+
 class FieldsErrorAsDictInValidateSerializer(SnippetSerializer):
     """
     Serializer which raises field errors as dict in `validate`
@@ -134,7 +144,7 @@ class FieldsErrorAsDictInValidateSerializer(SnippetSerializer):
     }
 
 
-class SnippetModelSerializer(FriendlyErrorMessagesMixin,
+class SnippetModelSerializer(SerializerErrorMessagesMixin,
                              serializers.ModelSerializer):
     class Meta:
         model = Snippet
@@ -161,7 +171,7 @@ class SnippetModelSerializer(FriendlyErrorMessagesMixin,
     }
 
 
-class AnotherSnippetModelSerializer(FriendlyErrorMessagesMixin,
+class AnotherSnippetModelSerializer(SerializerErrorMessagesMixin,
                                     serializers.ModelSerializer):
     class Meta:
         model = Snippet
@@ -190,7 +200,7 @@ class AnotherSnippetModelSerializer(FriendlyErrorMessagesMixin,
     }
 
 
-class ThirdSnippetModelSerializer(FriendlyErrorMessagesMixin,
+class ThirdSnippetModelSerializer(SerializerErrorMessagesMixin,
                                   serializers.ModelSerializer):
     class Meta:
         model = Snippet
@@ -205,12 +215,12 @@ class ThirdSnippetModelSerializer(FriendlyErrorMessagesMixin,
         return value
 
 
-class SnippetValidator(FriendlyErrorMessagesMixin, serializers.Serializer):
+class SnippetValidator(SerializerErrorMessagesMixin, serializers.Serializer):
     title = serializers.SlugRelatedField(
         queryset=Snippet.objects.all(), slug_field='title')
 
 
-class FieldOptionModelSerializer(FriendlyErrorMessagesMixin,
+class FieldOptionModelSerializer(SerializerErrorMessagesMixin,
                                  serializers.ModelSerializer):
     value = serializers.IntegerField(validators=[
         validators.UniqueValidator(queryset=FieldOption.objects.all())
@@ -225,7 +235,7 @@ class FieldOptionModelSerializer(FriendlyErrorMessagesMixin,
         return FieldOption.objects.create(**validated_data)
 
 
-class FieldModelSerializer(FriendlyErrorMessagesMixin,
+class FieldModelSerializer(SerializerErrorMessagesMixin,
                            serializers.ModelSerializer):
     label = serializers.CharField(max_length=10)
     options = FieldOptionModelSerializer(many=True, required=False)
