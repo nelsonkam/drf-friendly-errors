@@ -20,6 +20,7 @@ class SerializerErrorMessagesMixin(FieldMap):
 
     FIELD_VALIDATION_ERRORS = {}
     NON_FIELD_ERRORS = {}
+    FIELD_ERRORS = {}
 
     def __init__(self, *args, **kwargs):
         self.registered_errors = {}
@@ -182,14 +183,18 @@ class SerializerErrorMessagesMixin(FieldMap):
             if self._run_validator(validator, field, message, parent=parent):
                 return validator
 
-    def get_validator_error_code(self, validator, error):
+    def get_validator_error_code(self, validator, error, field=None):
         try:
             name = validator.__name__
         except AttributeError:
             name = validator.__class__.__name__
-        return self.FIELD_VALIDATION_ERRORS.get(name) \
+        code = self.FIELD_VALIDATION_ERRORS.get(name) \
             or settings.FRIENDLY_VALIDATOR_ERRORS.get(name) \
             or getattr(error, 'code', None)
+        if self.FIELD_ERRORS.get(field.field_name, None):
+            field_error = self.FIELD_ERRORS.get(field.field_name)
+            return field_error.get(code) or code
+        return code
 
     def is_default_error(self, error):
         return settings.INVALID_DATA_MESSAGE.format(
@@ -215,7 +220,7 @@ class SerializerErrorMessagesMixin(FieldMap):
             # Here we know that error was raised by a custom field validator
             validator = self.find_validator(field, error)
             if validator:
-                code = self.get_validator_error_code(validator, error)
+                code = self.get_validator_error_code(validator, error, field)
                 return {'code': code, 'message': error}
 
             # Here we know that error was raised by a custom field validator
@@ -228,14 +233,14 @@ class SerializerErrorMessagesMixin(FieldMap):
                     validator = self.find_validator(
                         child_field, error, parent=field)
                     if validator:
-                        code = self.get_validator_error_code(validator, error)
+                        code = self.get_validator_error_code(validator, error, field)
                         return {'code': code, 'message': error}
 
             # Here we know that error was raised by custom validate method
             # in serializer
             validator = getattr(self, "validate_%s" % field.field_name, None)
             if validator and self._run_validator(validator, field, error):
-                code = self.get_validator_error_code(validator, error)
+                code = self.get_validator_error_code(validator, error, field)
                 return {'code': code, 'message': error}
             else:
                 # maybe field error was raised directly from `validate` method
