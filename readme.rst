@@ -115,7 +115,7 @@ If you need custom field validation or validation for whole serializer register 
             return attrs
 
         FIELD_VALIDATION_ERRORS = {'validate_title': 'invalid_title'} # register your own validation method and assign it to error code
-        FIELD_ERRORS = {'slug': {'unique': 'unique_slug'} # register field error messages for a field name and rename its error code
+        FIELD_ERRORS = {'slug': {'unique': 'unique_slug'} # register field names and assign error codes to new ones
         NON_FIELD_ERRORS = {'Title has to include category': 'no_category'} # register non field error messages and assign it to error code
 
 If you want to raise field error in validate method use register_error method provided by a mixin
