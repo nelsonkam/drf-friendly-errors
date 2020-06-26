@@ -168,7 +168,10 @@ class SerializerErrorMessagesMixin(FieldMap):
                 for data in initial_data:
                     validator(data[field.field_name])
             else:
-                validator(self.initial_data[field.field_name])
+                if hasattr(validator, "requires_context") and validator.requires_context:
+                    validator(self.initial_data[field.field_name], field)
+                else:
+                    validator(self.initial_data[field.field_name])
         except (DjangoValidationError, RestValidationError) as err:
             err_message = err.detail[0] \
                 if hasattr(err, 'detail') else err.message
